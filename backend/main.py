@@ -41,13 +41,13 @@ if API_PROVIDER == "gemini":
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-        MODEL_NAME = os.getenv("MODEL_NAME", "gemini-1.5-flash")
+        MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.5-flash")
     else:
         gemini_client = None
 else:
     from openai import OpenAI
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+    MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.5-flash")
 
 
 # Request/Response Models
