@@ -1,0 +1,13 @@
+fastapi==0.109.0
+uvicorn==0.27.0
+python-dotenv==1.0.0
+pydantic>=2.9.0
+httpx>=0.28.0
+python-multipart==0.0.6
+
+# Choose one based on API_PROVIDER setting:
+# For Google Gemini (FREE tier available)
+google-genai>=1.59.0
+
+# For OpenAI (requires paid API key)
+openai==1.10.0
