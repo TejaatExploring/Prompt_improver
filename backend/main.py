@@ -53,6 +53,7 @@ else:
 # Request/Response Models
 class PromptRequest(BaseModel):
     raw_prompt: str
+    detail_level: Optional[str] = "moderate"  # "simple", "moderate", or "detailed"
 
 
 class PromptAnalysis(BaseModel):
@@ -67,6 +68,7 @@ class PromptResponse(BaseModel):
     refined_prompt: str
     analysis: PromptAnalysis
     improvements: str
+    detail_level: str
 
 
 # Helper function to call LLM
@@ -150,14 +152,38 @@ Respond in JSON format with these exact keys: intent, domain, role, missing_deta
 
 
 # Step 2: Generate refined prompt
-def refine_prompt(raw_prompt: str, analysis: PromptAnalysis) -> tuple[str, str]:
+def refine_prompt(raw_prompt: str, analysis: PromptAnalysis, detail_level: str = "moderate") -> tuple[str, str]:
     """
     Generates an optimized, structured prompt based on the analysis.
     This is the second step of the two-step AI pipeline.
     Returns: (refined_prompt, improvements_explanation)
+    
+    detail_level options:
+    - "simple": Concise, single-paragraph improvement (best for simple tasks)
+    - "moderate": Balanced structure with key requirements (default, works well with most models)
+    - "detailed": Comprehensive enterprise-level prompt (for complex projects)
     """
     
-    refinement_system_prompt = f"""You are an expert prompt engineer. Your task is to transform a raw prompt into a clear, structured, high-quality prompt optimized for LLMs.
+    if detail_level == "simple":
+        refinement_system_prompt = f"""You are an expert prompt engineer. Transform the raw prompt into a clear, concise, improved version.
+
+Use this analysis:
+- Intent: {analysis.intent}
+- Domain: {analysis.domain}
+- Role: {analysis.role}
+- Key missing details: {', '.join(analysis.missing_details[:2])}
+
+Create a CONCISE improved prompt (2-4 sentences) that:
+1. Specifies the role/perspective
+2. Clarifies the task
+3. Mentions 1-2 key requirements or constraints
+
+Keep it short and actionable. No complex formatting.
+
+IMPORTANT: Only return the improved prompt itself, nothing else."""
+
+    elif detail_level == "detailed":
+        refinement_system_prompt = f"""You are an expert prompt engineer. Your task is to transform a raw prompt into a comprehensive, enterprise-grade prompt.
 
 Use this analysis:
 - Intent: {analysis.intent}
@@ -174,18 +200,47 @@ Task:
 [Clear, specific task description]
 
 Requirements:
+- [Technology/methodology details]
 - [Specific constraint 1]
 - [Specific constraint 2]
 - [Specific constraint 3]
+- [Quality standards]
 - [Additional constraints as needed]
 
 Output:
-- [Expected output format]
-- [Additional output specifications]
+- [Expected output format with details]
+- [Code structure or deliverable format]
+- [Additional specifications]
 
-Make the prompt clear, specific, and actionable. Add relevant constraints and details that will help an LLM produce better results.
+Make the prompt highly detailed, covering edge cases, best practices, and comprehensive requirements.
 
-IMPORTANT: Only return the improved prompt itself, nothing else. Do not add any preamble or explanation."""
+IMPORTANT: Only return the improved prompt itself, nothing else."""
+
+    else:  # moderate (default)
+        refinement_system_prompt = f"""You are an expert prompt engineer. Transform the raw prompt into a clear, well-structured prompt.
+
+Use this analysis:
+- Intent: {analysis.intent}
+- Domain: {analysis.domain}
+- Role: {analysis.role}
+- Missing details: {', '.join(analysis.missing_details)}
+- Output format: {analysis.output_format}
+
+Create an improved prompt with this structure:
+
+Act as a {analysis.role}.
+
+Task: [Clear, specific description in 1-2 sentences]
+
+Requirements:
+- [Essential constraint 1]
+- [Essential constraint 2]  
+- [Essential constraint 3]
+- [1-2 more key requirements]
+
+Keep it practical and concise. Focus on the most important details that will help produce good results without overwhelming the user or model.
+
+IMPORTANT: Only return the improved prompt itself, nothing else."""
 
     improvements_system_prompt = """You are a prompt engineering teacher. Briefly explain (in 2-3 sentences) what improvements were made to transform the raw prompt into the refined version. Focus on the key enhancements."""
 
@@ -226,22 +281,33 @@ async def refine_user_prompt(request: PromptRequest):
     """
     Main endpoint: Takes a raw prompt and returns a refined, structured version.
     Implements the two-step AI pipeline (analyze + refine).
+    
+    detail_level options:
+    - "simple": Quick, concise improvement
+    - "moderate": Balanced structure (default)
+    - "detailed": Comprehensive enterprise-level
     """
     
     if not request.raw_prompt or len(request.raw_prompt.strip()) < 5:
         raise HTTPException(status_code=400, detail="Prompt must be at least 5 characters long")
     
+    # Validate detail_level
+    detail_level = request.detail_level or "moderate"
+    if detail_level not in ["simple", "moderate", "detailed"]:
+        detail_level = "moderate"
+    
     try:
         # Step 1: Analyze the prompt
         analysis = analyze_prompt(request.raw_prompt)
         
-        # Step 2: Generate refined prompt
-        refined_prompt, improvements = refine_prompt(request.raw_prompt, analysis)
+        # Step 2: Generate refined prompt with specified detail level
+        refined_prompt, improvements = refine_prompt(request.raw_prompt, analysis, detail_level)
         
         return PromptResponse(
             refined_prompt=refined_prompt,
             analysis=analysis,
-            improvements=improvements
+            improvements=improvements,
+            detail_level=detail_level
         )
         
     except HTTPException:

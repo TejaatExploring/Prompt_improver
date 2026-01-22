@@ -12,6 +12,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [detailLevel, setDetailLevel] = useState('moderate');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +31,8 @@ function App() {
 
     try {
       const response = await axios.post(`${API_URL}/api/refine`, {
-        raw_prompt: rawPrompt
+        raw_prompt: rawPrompt,
+        detail_level: detailLevel
       });
 
       setRefinedPrompt(response.data.refined_prompt);
@@ -87,6 +89,51 @@ function App() {
                 rows="6"
                 disabled={loading}
               />
+              
+              {/* Detail Level Selector */}
+              <div className="detail-level-selector">
+                <label className="label-small">Detail Level:</label>
+                <div className="radio-group">
+                  <label className="radio-option">
+                    <input
+                      type="radio"
+                      name="detailLevel"
+                      value="simple"
+                      checked={detailLevel === 'simple'}
+                      onChange={(e) => setDetailLevel(e.target.value)}
+                      disabled={loading}
+                    />
+                    <span>Simple</span>
+                    <span className="radio-description">Quick & concise</span>
+                  </label>
+                  
+                  <label className="radio-option">
+                    <input
+                      type="radio"
+                      name="detailLevel"
+                      value="moderate"
+                      checked={detailLevel === 'moderate'}
+                      onChange={(e) => setDetailLevel(e.target.value)}
+                      disabled={loading}
+                    />
+                    <span>Moderate</span>
+                    <span className="radio-description">Balanced (recommended)</span>
+                  </label>
+                  
+                  <label className="radio-option">
+                    <input
+                      type="radio"
+                      name="detailLevel"
+                      value="detailed"
+                      checked={detailLevel === 'detailed'}
+                      onChange={(e) => setDetailLevel(e.target.value)}
+                      disabled={loading}
+                    />
+                    <span>Detailed</span>
+                    <span className="radio-description">Comprehensive</span>
+                  </label>
+                </div>
+              </div>
               
               <div className="button-group">
                 <button 

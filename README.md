@@ -44,6 +44,16 @@ This tool solves a common problem: **most users write vague prompts** that lack 
 
 ## ✨ Features
 
+### 🎚️ Three Detail Levels
+
+Choose the right level of prompt improvement for your needs:
+
+- **Simple** (Quick & Concise) - 2-4 sentences, perfect for simple tasks and lower-tier models
+- **Moderate** (Balanced) ⭐ **Default** - Structured format with 4-5 key requirements, works great with most models
+- **Detailed** (Comprehensive) - Enterprise-level prompts with extensive requirements for complex projects
+
+See [DETAIL_LEVELS.md](DETAIL_LEVELS.md) for detailed examples of each level.
+
 ### 🔍 Two-Step AI Pipeline
 
 1. **Prompt Analysis** (Internal)
